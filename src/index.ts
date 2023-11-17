@@ -5,6 +5,7 @@ import http from 'http';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import cors from 'cors';
 import { expressMiddleware } from '@apollo/server/express4';
+import logger from 'morgan';
 
 interface IContext {
   token?: string;
@@ -29,6 +30,7 @@ const startServer = async () => {
     '/graphql',
     cors<cors.CorsRequest>(),
     express.json(),
+    logger('tiny'),
     expressMiddleware(server, {
       context: async ({ req }) => ({ token: req.headers.token }),
     })
