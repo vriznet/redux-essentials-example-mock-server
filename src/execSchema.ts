@@ -1,32 +1,16 @@
 import { makeExecutableSchema } from '@graphql-tools/schema';
+import { loadFilesSync } from '@graphql-tools/load-files';
+import { mergeTypeDefs, mergeResolvers } from '@graphql-tools/merge';
 
-const books = [
-  {
-    title: 'The Awakening',
-    author: 'Kate Chopin',
-  },
-  {
-    title: 'City of Glass',
-    author: 'Paul Auster',
-  },
-];
+const loadedTypes = loadFilesSync(`${__dirname}/**/*.typeDefs.*`);
+const loadedResolvers = loadFilesSync(`${__dirname}/**/*.resolvers.*`);
 
-const typeDefs = `#graphql
-  type Book {
-    title: String
-    author: String
-  }
-  type Query {
-    books: [Book]
-  }
-`;
+export const typeDefs = mergeTypeDefs(loadedTypes);
+export const resolvers = mergeResolvers(loadedResolvers);
 
-const resolvers = {
-  Query: {
-    books: () => books,
-  },
-};
-
-const execSchema = makeExecutableSchema({ typeDefs, resolvers });
+const execSchema = makeExecutableSchema({
+  typeDefs,
+  resolvers,
+});
 
 export default execSchema;
