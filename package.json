@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "dev": ""
+    "dev": "nodemon --exec ts-node src --ext ts,js --delay 1"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +19,7 @@
   "devDependencies": {
     "@types/dotenv": "^8.2.0",
     "@types/node": "^20.9.1",
+    "nodemon": "^3.0.1",
     "typescript": "^5.2.2"
   }
 }
