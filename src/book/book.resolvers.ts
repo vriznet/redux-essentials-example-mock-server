@@ -1,3 +1,5 @@
+import { Resolvers } from '../type';
+
 const books = [
   {
     title: 'The Awakening',
@@ -9,7 +11,7 @@ const books = [
   },
 ];
 
-const resolvers = {
+const resolvers: Resolvers = {
   Query: {
     books: () => books,
   },
