@@ -1,9 +1,9 @@
-import { users } from '../data/users';
+import client from '../client';
 import { Resolvers } from '../type';
 
 const resolvers: Resolvers = {
   Query: {
-    users: () => users,
+    users: () => client.user.findMany(),
   },
 };
 

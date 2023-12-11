@@ -1,71 +1,122 @@
-import { notifications } from '../data/notifications';
+import { randomUUID } from 'crypto';
+import client from '../client';
 import { Resolvers } from '../type';
+import dayjs from 'dayjs';
+import { dayjsTimezone } from '../utils';
 
 const resolvers: Resolvers = {
   Query: {
-    notifications: () => notifications,
-    notificationsSince: (_, { date }) => {
-      console.log(notifications);
-      console.log(date);
-      return notifications.filter((notification) => notification.date > date);
+    notifications: () => client.notification.findMany(),
+    notificationsSince: async (_, { date }) => {
+      const notifications = await client.notification.findMany({
+        where: {
+          date: {
+            gt: date,
+          },
+        },
+        orderBy: {
+          date: 'desc',
+        },
+      });
+      if (!notifications) return [];
+      return notifications;
     },
   },
   Mutation: {
-    addNewNotification: (_, { message, userId }) => {
-      const newDate = new Date().toISOString();
-      const newNotification = {
-        id: String(notifications.length + 1),
-        date: newDate,
-        message,
-        userId,
-        read: false,
-        isNew: true,
-      };
-      notifications.unshift(newNotification);
-      return newNotification;
-    },
-    markAsRead: (_, { id }) => {
-      const notification = notifications.find(
-        (notification) => notification.id === id
-      );
-      if (notification) {
-        notification.isNew = false;
-        notification.read = true;
-        return {
-          ok: true,
-        };
-      } else {
-        return {
-          ok: false,
-          error: 'Could not find notification.',
-        };
+    addNewNotification: async (_, { message, userId }) => {
+      dayjsTimezone();
+      try {
+        const newNotification = await client.notification.create({
+          data: {
+            id: randomUUID(),
+            date: dayjs().tz('Asia/Seoul').toDate(),
+            message,
+            user: {
+              connect: {
+                id: userId,
+              },
+            },
+            read: false,
+            isNew: true,
+          },
+        });
+        return newNotification;
+      } catch (error) {
+        console.error(error);
+        return null;
       }
     },
-    markAllNotificationsAsRead: () => {
-      notifications.forEach((notification) => {
-        notification.isNew = false;
-        notification.read = true;
-      });
-      return {
-        ok: true,
-      };
-    },
-    markAllNotificationsOfUserAsRead: (_, { userId }) => {
-      const userNotifications = notifications.filter(
-        (notification) => notification.userId === userId
-      );
-      if (userNotifications.length > 0) {
-        userNotifications.forEach((notification) => {
-          notification.isNew = false;
-          notification.read = true;
+    markAsRead: async (_, { id }) => {
+      try {
+        const notification = await client.notification.findUnique({
+          where: {
+            id,
+          },
+        });
+        if (!notification)
+          return { ok: false, error: 'Notification not found.' };
+        await client.notification.update({
+          where: {
+            id,
+          },
+          data: {
+            read: true,
+            isNew: false,
+          },
         });
         return {
           ok: true,
         };
-      } else {
+      } catch (error) {
+        console.error(error);
         return {
           ok: false,
-          error: 'Could not find notifications of user.',
+          error: 'Could not mark notification as read.',
+        };
+      }
+    },
+    markAllNotificationsAsRead: async () => {
+      try {
+        await client.notification.updateMany({
+          where: {
+            read: false,
+          },
+          data: {
+            read: true,
+            isNew: false,
+          },
+        });
+        return {
+          ok: true,
+        };
+      } catch (error) {
+        console.error(error);
+        return {
+          ok: false,
+          error: 'Could not mark notifications as read.',
+        };
+      }
+    },
+    markAllNotificationsOfUserAsRead: async (_, { userId }) => {
+      try {
+        await client.notification.updateMany({
+          where: {
+            userId,
+            read: false,
+          },
+          data: {
+            read: true,
+            isNew: false,
+          },
+        });
+        return {
+          ok: true,
+        };
+      } catch (error) {
+        console.error(error);
+        return {
+          ok: false,
+          error: 'Could not mark notifications as read.',
         };
       }
     },
